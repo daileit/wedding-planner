@@ -48,6 +48,7 @@ export type Currency =
 // ==========================================
 
 export interface WeddingMetadata {
+  [key: string]: string | number | boolean | null | undefined;
   eventDate?: string;
   venue?: string;
   guestCount?: number;
