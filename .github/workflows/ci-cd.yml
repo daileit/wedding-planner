@@ -25,6 +25,13 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Cache package-lock.json
+        id: cache-lockfile
+        uses: actions/cache@v4
+        with:
+          path: app/package-lock.json
+          key: ${{ runner.os }}-lockfile-${{ hashFiles('app/package.json') }}
+
       - name: Cache node modules
         uses: actions/cache@v4
         with:
@@ -34,7 +41,12 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install dependencies
-        run: npm ci || npm install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Generate Prisma Client
         run: npx prisma generate
