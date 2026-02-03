@@ -1,0 +1,261 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// AUTH MODELS (NextAuth.js v5 Compatible)
+// ==========================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts Account[]
+  sessions Session[]
+  plans    Plan[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ==========================================
+// CORE PLANNING MODELS (Generalized Schema)
+// ==========================================
+
+enum PlanType {
+  WEDDING
+  PARTY
+  CORPORATE_EVENT
+  HOUSE_RENOVATION
+  TRAVEL
+  OTHER
+}
+
+enum PlanStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum ItemStatus {
+  PENDING
+  IN_PROGRESS
+  BOOKED
+  PAID
+  COMPLETED
+  CANCELLED
+}
+
+enum Currency {
+  USD
+  EUR
+  GBP
+  JPY
+  AUD
+  CAD
+  CHF
+  CNY
+  INR
+  VND
+}
+
+model Plan {
+  id          String     @id @default(cuid())
+  userId      String
+  title       String
+  description String?    @db.Text
+  type        PlanType   @default(WEDDING)
+  status      PlanStatus @default(DRAFT)
+
+  // Budget tracking
+  totalBudget Decimal  @default(0) @db.Decimal(15, 2)
+  currency    Currency @default(USD)
+
+  // Wedding-specific metadata (stored as JSON for flexibility)
+  // Can include: eventDate, venue, guestCount, theme, etc.
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  eventDate DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories Category[]
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("plans")
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  planId      String
+  name        String
+  description String?
+  color       String  @default("#6366f1") // Default indigo
+  icon        String? // Lucide icon name
+  sortOrder   Int     @default(0)
+
+  // Budget allocation for this category
+  allocatedBudget Decimal @default(0) @db.Decimal(15, 2)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  plan  Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  items Item[]
+
+  @@index([planId])
+  @@index([sortOrder])
+  @@map("categories")
+}
+
+model Item {
+  id          String     @id @default(cuid())
+  categoryId  String
+  name        String
+  description String?    @db.Text
+  status      ItemStatus @default(PENDING)
+
+  // Cost tracking
+  estimatedCost Decimal  @default(0) @db.Decimal(15, 2)
+  actualCost    Decimal? @db.Decimal(15, 2)
+  paidAmount    Decimal  @default(0) @db.Decimal(15, 2)
+
+  // Priority and scheduling
+  priority Int       @default(0) // Higher = more important
+  dueDate  DateTime?
+
+  // Vendor relationship
+  vendorId   String?
+  vendorLink String? // Direct booking/affiliate link
+  vendorNote String? @db.Text
+
+  // Additional metadata
+  notes      String? @db.Text
+  attachments Json?   @db.JsonB // Array of file URLs/metadata
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  vendor   Vendor?  @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+
+  @@index([categoryId])
+  @@index([vendorId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("items")
+}
+
+// ==========================================
+// VENDOR MODELS (Affiliate Marketing)
+// ==========================================
+
+model Vendor {
+  id          String  @id @default(cuid())
+  name        String
+  description String? @db.Text
+  website     String?
+  email       String?
+  phone       String?
+
+  // Affiliate marketing
+  affiliateLink    String? // Primary affiliate link
+  affiliateCode    String? // Discount/tracking code
+  commissionRate   Decimal? @db.Decimal(5, 2) // Percentage
+
+  // Categorization
+  categoryTags String[] // e.g., ["photography", "venue", "catering"]
+  location     String?
+
+  // Rating/Reviews
+  rating      Decimal? @db.Decimal(3, 2) // 0.00 to 5.00
+  reviewCount Int      @default(0)
+
+  // Media
+  logoUrl   String?
+  coverUrl  String?
+  gallery   Json?    @db.JsonB // Array of image URLs
+
+  // Business info
+  isVerified Boolean @default(false)
+  isActive   Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  items Item[]
+
+  @@index([categoryTags])
+  @@index([isActive])
+  @@index([rating])
+  @@map("vendors")
+}
