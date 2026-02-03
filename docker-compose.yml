@@ -1,5 +1,6 @@
 # ==========================================
 # WedBeLoving - Docker Compose for Development
+# All env vars are passed at container runtime
 # ==========================================
 
 services:
@@ -25,19 +26,24 @@ services:
       - wedbeloving-network
 
   # Next.js Application (Development)
-  app:
+  web:
     build:
-      context: ./frontend
+      context: ./app
       dockerfile: Dockerfile.dev
-    container_name: wedbeloving-app
+    container_name: wedbeloving-web
     restart: unless-stopped
     environment:
-      - NODE_ENV=development
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-wedbeloving}:${POSTGRES_PASSWORD:-wedbeloving_secret}@postgres:5432/${POSTGRES_DB:-wedbeloving}?schema=public
-      - NEXTAUTH_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-your-development-secret-change-in-production}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      # Runtime environment variables
+      NODE_ENV: development
+      PORT: 3000
+      # Database - constructed from individual vars for flexibility
+      DATABASE_URL: postgresql://${POSTGRES_USER:-wedbeloving}:${POSTGRES_PASSWORD:-wedbeloving_secret}@postgres:5432/${POSTGRES_DB:-wedbeloving}?schema=public
+      # NextAuth.js
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-in-production-min-32-chars}
+      # Google OAuth
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
     volumes:
       - ./frontend:/app
       - /app/node_modules
