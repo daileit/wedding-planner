@@ -1,110 +1,124 @@
-# Cost Planner - AI Agent Instructions
+# WedBeLoving - AI Agent Instructions
 
-## 🏗️ Monorepo Architecture
+## 🏗️ Architecture
 
-Full-stack wedding cost planner with separate backend/frontend:
-- **backend/**: Django + Django Ninja REST API (Python 3.13, SQLite)
-- **frontend/**: Next.js App Router UI (TypeScript, React 18)
-- Shared `.github/workflows/` for CI/CD
+Full-stack Next.js 14 wedding planner - **single application, no separate backend**.
 
-## Backend Architecture (Django + Django Ninja)
+```
+app/                         # Full-stack Next.js application
+├── prisma/                  # Database schema (PostgreSQL)
+├── src/
+│   ├── app/                 # Pages & API routes
+│   ├── components/          # React components (Shadcn UI)
+│   ├── lib/                 # Prisma client, Auth config
+│   ├── server/actions/      # 🔧 BACKEND LOGIC (Server Actions)
+│   └── types/               # TypeScript definitions
+├── Dockerfile               # Production (standalone)
+└── Dockerfile.dev           # Development
+```
 
-Django app structure in `backend/app/cost_plans/`:
-- **Models** (`models.py`): Django ORM models with `@property` computed fields (`total_estimated_cost`, `remaining_budget`)
-- **Schemas** (`schemas.py`): Django Ninja schemas for validation (Create/Update/Response/Summary variants)
-- **API** (`api.py`): Django Ninja endpoint handlers with Django ORM queries
-- **Admin** (`admin.py`): Django Admin interface with inline editing
+## Backend Logic (Server Actions)
+
+All backend code is in `app/src/server/actions/`:
+- **plans.ts**: CRUD for wedding plans
+- **categories.ts**: Budget categories within plans
+- **items.ts**: Individual items/tasks
 
 ### Data Flow Pattern
-1. Request → Schema validation (e.g., `CostPlanCreate`)
-2. API view uses Django ORM to create/query models with UUIDs
-3. Model saved to SQLite database via `model.save()` or `Model.objects.create()`
-4. Response via `model_to_response()` helper (Model → Response schema)
+```typescript
+// app/src/server/actions/plans.ts
+"use server";  // Runs on SERVER only
 
-See [backend/app/cost_plans/api.py](backend/app/cost_plans/api.py) for full pattern.
+import prisma from "@/lib/prisma";
 
-### Backend Conventions
-- **Status**: `PlanStatus` TextChoices (draft/active/completed/cancelled)
-- **Costs**: `estimated_cost` (DecimalField, >0), `actual_cost` (DecimalField, optional, ≥0)
-- **Computed properties**: `@property` methods on models (not stored in DB)
-- **Schema naming**: `*Create` (POST), `*Update` (PUT/PATCH), `*Response` (API output), `*Summary` (list views)
-- **Admin**: Full CRUD operations available at `/admin/` after creating superuser
+export async function createPlan(input: CreatePlanInput) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  
+  const plan = await prisma.plan.create({
+    data: { userId: session.user.id, ...input }
+  });
+  
+  revalidatePath("/dashboard");
+  return { id: plan.id };
+}
+```
 
-### Database
-Uses Django ORM with SQLite by default. Migrations in `app/cost_plans/migrations/`. Data persists across restarts. Easy to switch to PostgreSQL/MySQL.
+### Conventions
+- **Auth**: Always verify `session.user.id` before database operations
+- **Validation**: Ownership checked via `userId` relation
+- **Revalidation**: Call `revalidatePath()` after mutations
+- **Types**: Use types from `@/types` (CreatePlanInput, UpdatePlanInput, etc.)
 
-## Frontend Architecture (Next.js)
+## Database (Prisma + PostgreSQL)
 
-- **App Router** with TypeScript in `frontend/src/app/`
-- **Environment**: `NEXT_PUBLIC_API_URL` for backend communication
-- **Docker**: Multi-stage build with standalone output for production
+Schema in `app/prisma/schema.prisma`:
+- **User**: NextAuth.js compatible (accounts, sessions)
+- **Plan**: Generalized (WEDDING, PARTY, etc.) with budget
+- **Category**: Budget categories with color coding
+- **Item**: Tasks with cost tracking, status, vendor links
+- **Vendor**: Directory with affiliate marketing support
 
-API calls use `process.env.NEXT_PUBLIC_API_URL` (defaults to http://localhost:8000). See [frontend/src/app/page.tsx](frontend/src/app/page.tsx) for fetch pattern.
+### Enums
+- **PlanType**: WEDDING, PARTY, CORPORATE_EVENT, HOUSE_RENOVATION, TRAVEL, OTHER
+- **PlanStatus**: DRAFT, ACTIVE, COMPLETED, ARCHIVED
+- **ItemStatus**: PENDING, IN_PROGRESS, BOOKED, PAID, COMPLETED, CANCELLED
+- **Currency**: USD, EUR, GBP, etc.
 
 ## Development Workflow
 
-### Local Development
 ```bash
-# Backend
-cd backend
-python manage.py migrate              # Run migrations
-python manage.py createsuperuser      # Create admin user
-python manage.py runserver            # :8000
+# Local development
+cd app
+cp .env.example .env.local
+npm install
+npm run db:push
+npm run dev                    # :3000
 
-# Frontend
-cd frontend && npm install && npm run dev    # :3000
-
-# Or use Docker Compose
-docker-compose up
+# Or use Docker Compose (from project root)
+docker-compose up -d
 ```
 
-### Docker Builds
-```bash
-# Backend
-docker build -t cost-planner-backend ./backend
+## Docker
 
-# Frontend  
-docker build -t cost-planner-frontend ./frontend
+Single container deployment with runtime environment variables:
+
+```bash
+# Build
+docker build -t wedbeloving ./app
+
+# Run (all env vars injected at runtime)
+docker run -e DATABASE_URL=... -e NEXTAUTH_SECRET=... wedbeloving
 ```
 
 ## CI/CD Pipeline
 
-`.github/workflows/ci-cd.yml` runs two parallel jobs:
+`.github/workflows/ci-cd.yml`:
+1. Install dependencies → Generate Prisma → Lint → Build
+2. Docker build & push to DockerHub
+3. Trigger deploy webhook on main branch
 
-**Backend Job**:
-1. Python setup → pip install → tests
-2. Docker build → push to `DOCKERHUB_USERNAME/cost-planner-backend`
-3. Trigger `BACKEND_DEPLOY_WEBHOOK_URL` on main branch
-
-**Frontend Job**:
-1. Node setup → npm ci → lint → build
-2. Docker build with `NEXT_PUBLIC_API_URL` build arg
-3. Push to `DOCKERHUB_USERNAME/cost-planner-frontend`  
-4. Trigger `FRONTEND_DEPLOY_WEBHOOK_URL` on main branch
-
-### Required GitHub Secrets
+### Required Secrets
 - `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`
-- `BACKEND_DEPLOY_WEBHOOK_URL`, `FRONTEND_DEPLOY_WEBHOOK_URL`
-- `NEXT_PUBLIC_API_URL` (production API endpoint)
+- `DEPLOY_HOOK_URL` (optional)
 
 ## Adding Features
 
-### Backend Endpoint
-1. Define model in `backend/app/cost_plans/models.py` with `@property` for computed fields
-2. Create schemas in `backend/app/cost_plans/schemas.py` (Create, Update, Response variants)
-3. Add route in `backend/app/cost_plans/api.py` using `model_to_response()` pattern
-4. Register model in `backend/app/cost_plans/admin.py` for Django Admin access
+### New Server Action
+1. Add function in `app/src/server/actions/`
+2. Use `"use server"` directive
+3. Verify auth with `await auth()`
+4. Use Prisma for database operations
+5. Call `revalidatePath()` after mutations
 
-### Frontend Page
-1. Create route in `frontend/src/app/[route]/page.tsx`
-2. Use `'use client'` for state/effects
-3. Fetch from `${process.env.NEXT_PUBLIC_API_URL}/api/v1/...`
-4. Handle loading/error states
+### New Page
+1. Create route in `app/src/app/[route]/page.tsx`
+2. Use `await auth()` for protected pages
+3. Import Server Actions directly
+4. Use Shadcn UI components from `@/components/ui`
 
-See [backend/app/cost_plans/api.py](backend/app/cost_plans/api.py) for nested resource pattern (items within plans).
-
-## Configuration
-
-- **Backend**: `backend/app/settings.py` for Django settings, supports env vars for `CORS_ORIGINS`, `DEBUG`, `SECRET_KEY`
-- **Frontend**: `next.config.js` for build config, `.env.local` for runtime vars
-- **Docker Compose**: `docker-compose.yml` orchestrates both services with networking
+### New Database Model
+1. Add model in `app/prisma/schema.prisma`
+2. Run `npm run db:push` or `npm run db:migrate`
+3. Add types in `app/src/types/index.ts`
+4. Create Server Actions in `app/src/server/actions/`
