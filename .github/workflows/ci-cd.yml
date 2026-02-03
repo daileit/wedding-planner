@@ -25,20 +25,46 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Determine cache key suffix
+        id: cachekey
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          MSG="$COMMIT_MESSAGE"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            MSG="$PR_TITLE"
+          fi
+          if echo "$MSG" | grep -qi 'package'; then
+            echo "suffix=-bust-${GITHUB_SHA}" >> $GITHUB_OUTPUT
+            echo "Cache bust due to 'package' in commit message"
+          else
+            echo "suffix=" >> $GITHUB_OUTPUT
+          fi
+
       - name: Cache package-lock.json
         id: cache-lockfile
         uses: actions/cache@v4
         with:
           path: app/package-lock.json
-          key: ${{ runner.os }}-lockfile-${{ hashFiles('app/package.json') }}
+          key: ${{ runner.os }}-lockfile-${{ hashFiles('app/package.json') }}${{ steps.cachekey.outputs.suffix }}
 
       - name: Cache node modules
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('app/package-lock.json', 'app/package.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('app/package-lock.json', 'app/package.json') }}${{ steps.cachekey.outputs.suffix }}
           restore-keys: |
             ${{ runner.os }}-node-
+
+      - name: Clear npm cache (busted)
+        if: steps.cachekey.outputs.suffix != ''
+        run: rm -rf ~/.npm
+
+      - name: Remove lockfile to regenerate (busted)
+        if: steps.cachekey.outputs.suffix != ''
+        run: rm -f package-lock.json
 
       - name: Install dependencies
         run: |
