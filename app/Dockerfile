@@ -27,6 +27,9 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# Ensure public directory exists even if repo doesn't include it
+RUN mkdir -p public
+
 # Set build-time environment variables
 # These are dummy values - real values are injected at runtime
 ENV NEXT_TELEMETRY_DISABLED=1
