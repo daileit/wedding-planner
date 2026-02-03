@@ -1,6 +1,4 @@
-process.env.ESLINT_NO_PATCH ??= 'true';
-
-const next = (await import('eslint-config-next')).default;
+import next from 'eslint-config-next';
 
 export default [
   ...next,
