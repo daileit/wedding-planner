@@ -79,8 +79,6 @@ jobs:
 
       - name: Run linting
         run: npm run lint
-        env:
-          ESLINT_NO_PATCH: 'true'
 
       - name: Build application
         run: npm run build
