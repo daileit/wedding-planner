@@ -39,9 +39,9 @@ jobs:
           if [ "$EVENT_NAME" = "pull_request" ]; then
             MSG="$PR_TITLE"
           fi
-          if echo "$MSG" | grep -qi 'package' | grep -qi 'feat'; then
+          if echo "$MSG" | grep -qiE 'package|feat|dependencies'; then
             echo "suffix=-bust-${GITHUB_SHA}" >> $GITHUB_OUTPUT
-            echo "Cache bust due to 'package' in commit message"
+            echo "Cache bust due to package-related keyword in commit message"
           else
             echo "suffix=" >> $GITHUB_OUTPUT
           fi
