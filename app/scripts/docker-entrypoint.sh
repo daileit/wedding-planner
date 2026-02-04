@@ -19,6 +19,17 @@ check_required_env() {
   echo "✅ $var_name is configured"
 }
 
+# Validate optional environment variables (warn if not set)
+check_optional_env() {
+  var_name="$1"
+  var_value="$2"
+  if [ -z "$var_value" ]; then
+    echo "⚠️  $var_name is not set (optional)"
+  else
+    echo "✅ $var_name is configured"
+  fi
+}
+
 echo ""
 echo "📋 Validating environment configuration..."
 
@@ -28,8 +39,10 @@ check_required_env "DATABASE_URL" "$DATABASE_URL"
 # Required for authentication
 check_required_env "NEXTAUTH_URL" "$NEXTAUTH_URL"
 check_required_env "NEXTAUTH_SECRET" "$NEXTAUTH_SECRET"
-check_required_env "GOOGLE_CLIENT_ID" "$GOOGLE_CLIENT_ID"
-check_required_env "GOOGLE_CLIENT_SECRET" "$GOOGLE_CLIENT_SECRET"
+
+# Optional: Google OAuth (app works without it using email/password auth)
+check_optional_env "GOOGLE_CLIENT_ID" "$GOOGLE_CLIENT_ID"
+check_optional_env "GOOGLE_CLIENT_SECRET" "$GOOGLE_CLIENT_SECRET"
 
 echo ""
 echo "🔧 Environment:"
