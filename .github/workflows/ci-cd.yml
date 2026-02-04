@@ -39,7 +39,7 @@ jobs:
           if [ "$EVENT_NAME" = "pull_request" ]; then
             MSG="$PR_TITLE"
           fi
-          if echo "$MSG" | grep -qi 'package'; then
+          if echo "$MSG" | grep -qi 'package' | grep -qi 'feat'; then
             echo "suffix=-bust-${GITHUB_SHA}" >> $GITHUB_OUTPUT
             echo "Cache bust due to 'package' in commit message"
           else
