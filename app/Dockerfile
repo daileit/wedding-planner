@@ -56,8 +56,8 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Install runtime dependencies
-RUN apk add --no-cache wget
+# Install runtime dependencies (openssl for Prisma)
+RUN apk add --no-cache wget openssl
 
 # Set default environment variables (can be overridden at runtime)
 ENV NODE_ENV=production
