@@ -20,6 +20,8 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  password      String?   // For credentials-based auth (hashed)
+  isGuest       Boolean   @default(false) // Guest users (no account required)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

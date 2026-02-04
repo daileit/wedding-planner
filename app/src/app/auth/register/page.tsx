@@ -12,10 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Heart } from "lucide-react";
 import Link from "next/link";
-import { createGuestUser } from "@/server/actions/auth";
-import { cookies } from "next/headers";
+import { registerUser } from "@/server/actions/auth";
 
-export default async function SignInPage({
+export default async function RegisterPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string; callbackUrl?: string }>;
@@ -29,6 +28,32 @@ export default async function SignInPage({
 
   const callbackUrl = params.callbackUrl || "/dashboard";
 
+  async function handleRegister(formData: FormData) {
+    "use server";
+
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    if (password !== confirmPassword) {
+      redirect("/auth/register?error=PasswordMismatch");
+    }
+
+    const result = await registerUser({ name, email, password });
+
+    if (!result.success) {
+      redirect(`/auth/register?error=${encodeURIComponent(result.error || "Unknown")}`);
+    }
+
+    // Auto sign in after registration
+    await signIn("credentials", {
+      email,
+      password,
+      redirectTo: callbackUrl,
+    });
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <div className="mb-8 flex flex-col items-center">
@@ -41,32 +66,35 @@ export default async function SignInPage({
 
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle>Welcome Back</CardTitle>
+          <CardTitle>Create Account</CardTitle>
           <CardDescription>
-            Sign in to continue planning your perfect wedding
+            Sign up to start planning your perfect wedding
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {params.error && (
             <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {params.error === "CredentialsSignin"
-                ? "Invalid email or password"
-                : "An error occurred. Please try again."}
+              {params.error === "PasswordMismatch"
+                ? "Passwords do not match"
+                : params.error === "An account with this email already exists"
+                  ? "An account with this email already exists"
+                  : params.error}
             </div>
           )}
 
-          {/* Email/Password Form */}
-          <form
-            action={async (formData: FormData) => {
-              "use server";
-              await signIn("credentials", {
-                email: formData.get("email"),
-                password: formData.get("password"),
-                redirectTo: callbackUrl,
-              });
-            }}
-            className="space-y-4"
-          >
+          {/* Registration Form */}
+          <form action={handleRegister} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="John Doe"
+                required
+                minLength={2}
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -85,10 +113,25 @@ export default async function SignInPage({
                 type="password"
                 placeholder="••••••••"
                 required
+                minLength={8}
+              />
+              <p className="text-xs text-muted-foreground">
+                Must be at least 8 characters
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                required
+                minLength={8}
               />
             </div>
             <Button type="submit" className="w-full" size="lg">
-              Sign In
+              Create Account
             </Button>
           </form>
 
@@ -133,37 +176,14 @@ export default async function SignInPage({
                   fill="#EA4335"
                 />
               </svg>
-              Continue with Google
-            </Button>
-          </form>
-
-          {/* Guest Access */}
-          <form
-            action={async () => {
-              "use server";
-              const result = await createGuestUser();
-              if (result.success && result.userId) {
-                // Store guest ID in cookie for session creation
-                const cookieStore = await cookies();
-                cookieStore.set("guest_user_id", result.userId, {
-                  httpOnly: true,
-                  secure: process.env.NODE_ENV === "production",
-                  sameSite: "lax",
-                  maxAge: 60 * 60 * 24 * 7, // 7 days
-                });
-                redirect("/dashboard?guest=true");
-              }
-            }}
-          >
-            <Button type="submit" variant="ghost" className="w-full" size="lg">
-              Continue as Guest
+              Sign up with Google
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/auth/register" className="font-medium text-primary hover:underline">
-              Sign up
+            Already have an account?{" "}
+            <Link href="/auth/signin" className="font-medium text-primary hover:underline">
+              Sign in
             </Link>
           </p>
 
