@@ -72,7 +72,7 @@ export async function registerUser(input: RegisterInput): Promise<AuthResult> {
     return { success: true, userId: user.id };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.errors[0].message };
+      return { success: false, error: error.errors[0]?.message ?? "Validation failed" };
     }
     console.error("Registration error:", error);
     return { success: false, error: "Failed to create account" };
@@ -100,7 +100,7 @@ export async function loginWithCredentials(input: LoginInput): Promise<AuthResul
     return { success: true };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.errors[0].message };
+      return { success: false, error: error.errors[0]?.message ?? "Validation failed" };
     }
     // NextAuth throws an error on failed login
     return { success: false, error: "Invalid email or password" };
@@ -178,7 +178,7 @@ export async function upgradeGuestAccount(input: RegisterInput): Promise<AuthRes
     return { success: true, userId: currentUser.id };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.errors[0].message };
+      return { success: false, error: error.errors[0]?.message ?? "Validation failed" };
     }
     console.error("Upgrade error:", error);
     return { success: false, error: "Failed to upgrade account" };
