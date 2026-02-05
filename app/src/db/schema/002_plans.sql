@@ -86,28 +86,9 @@ CREATE INDEX IF NOT EXISTS idx_shares_plan ON plan_shares(plan_id);
 CREATE INDEX IF NOT EXISTS idx_shares_user ON plan_shares(shared_with);
 CREATE INDEX IF NOT EXISTS idx_shares_token ON plan_shares(share_token);
 
--- ==========================================
--- FUNCTION: Update timestamps automatically
--- ==========================================
-
-CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 -- Apply trigger to plans
 DROP TRIGGER IF EXISTS trigger_plans_updated ON plans;
 CREATE TRIGGER trigger_plans_updated
     BEFORE UPDATE ON plans
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
-
--- Apply trigger to users
-DROP TRIGGER IF EXISTS trigger_users_updated ON users;
-CREATE TRIGGER trigger_users_updated
-    BEFORE UPDATE ON users
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();

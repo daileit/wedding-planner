@@ -124,3 +124,22 @@ CREATE TABLE IF NOT EXISTS admin_audit_log (
 CREATE INDEX IF NOT EXISTS idx_audit_admin ON admin_audit_log(admin_id);
 CREATE INDEX IF NOT EXISTS idx_audit_action ON admin_audit_log(action);
 CREATE INDEX IF NOT EXISTS idx_audit_created ON admin_audit_log(created_at);
+
+-- ==========================================
+-- FUNCTION: Update timestamps automatically
+-- ==========================================
+
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Apply trigger to users
+DROP TRIGGER IF EXISTS trigger_users_updated ON users;
+CREATE TRIGGER trigger_users_updated
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
