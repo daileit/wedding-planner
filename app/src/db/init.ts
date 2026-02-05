@@ -8,8 +8,6 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
-const DB_VERSION = '1.0.0';
-
 interface MigrationFile {
   version: string;
   name: string;
