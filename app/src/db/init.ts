@@ -218,9 +218,11 @@ export async function ensureDatabaseInitialized(): Promise<boolean> {
     }
     
     return true;
-  } finally {
-    await pool.end();
+  } catch (error) {
+    console.error('Failed to check/initialize database:', error);
+    throw error;
   }
+  // Don't close pool - it's a singleton for the app lifecycle
 }
 
 /**
