@@ -135,7 +135,13 @@ async function executeMigration(
   
   console.log(`  Executing migration: ${migration.version}_${migration.name}`);
   
-  await client.query(content);
+  try {
+    await client.query(content);
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(`  ❌ Migration failed: ${errorMsg}`);
+    throw error;
+  }
   
   // Record migration (only if migrations table exists)
   try {
@@ -175,8 +181,13 @@ export async function initializeDatabase(pool: Pool): Promise<{
     
     for (const migration of migrations) {
       if (!executed.includes(migration.version)) {
-        await executeMigration(client, migration);
-        executedMigrations.push(`${migration.version}_${migration.name}`);
+        try {
+          await executeMigration(client, migration);
+          executedMigrations.push(`${migration.version}_${migration.name}`);
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          throw new Error(`Failed at migration ${migration.version}_${migration.name}: ${errorMsg}`);
+        }
       } else {
         console.log(`  Skipping migration: ${migration.version}_${migration.name} (already executed)`);
       }
@@ -192,7 +203,9 @@ export async function initializeDatabase(pool: Pool): Promise<{
     
     return { success: true, message, migrations: executedMigrations };
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK').catch(() => {
+      // Rollback might fail if transaction is already aborted
+    });
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('Database initialization failed:', message);
     return { success: false, message, migrations: executedMigrations };
