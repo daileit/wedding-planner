@@ -85,3 +85,27 @@ CREATE TABLE IF NOT EXISTS plan_shares (
 CREATE INDEX IF NOT EXISTS idx_shares_plan ON plan_shares(plan_id);
 CREATE INDEX IF NOT EXISTS idx_shares_user ON plan_shares(shared_with);
 CREATE INDEX IF NOT EXISTS idx_shares_token ON plan_shares(share_token);
+
+-- ==========================================
+-- FOREIGN KEY CONSTRAINTS
+-- ==========================================
+
+ALTER TABLE plans
+    ADD CONSTRAINT fk_plans_user_id 
+    FOREIGN KEY (user_id) 
+    REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE plan_templates
+    ADD CONSTRAINT fk_templates_created_by 
+    FOREIGN KEY (created_by) 
+    REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE plan_shares
+    ADD CONSTRAINT fk_shares_plan_id 
+    FOREIGN KEY (plan_id) 
+    REFERENCES plans(id) ON DELETE CASCADE;
+
+ALTER TABLE plan_shares
+    ADD CONSTRAINT fk_shares_shared_with 
+    FOREIGN KEY (shared_with) 
+    REFERENCES users(id) ON DELETE CASCADE;
