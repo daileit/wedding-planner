@@ -1,6 +1,6 @@
 -- System Configuration Schema
--- Version: 005
--- Description: App settings and migration tracking
+-- Version: 004
+-- Description: App settings, migrations tracking, and seed data
 
 -- ==========================================
 -- SYSTEM OPTIONS (WordPress-style wp_options)

@@ -85,14 +85,3 @@ CREATE TABLE IF NOT EXISTS plan_shares (
 CREATE INDEX IF NOT EXISTS idx_shares_plan ON plan_shares(plan_id);
 CREATE INDEX IF NOT EXISTS idx_shares_user ON plan_shares(shared_with);
 CREATE INDEX IF NOT EXISTS idx_shares_token ON plan_shares(share_token);
-
--- ==========================================
--- TRIGGER: Auto-update timestamps on plans
--- ==========================================
-
--- Apply trigger to plans (function defined in 001_users.sql)
-DROP TRIGGER IF EXISTS trigger_plans_updated ON plans;
-CREATE TRIGGER trigger_plans_updated
-    BEFORE UPDATE ON plans
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();

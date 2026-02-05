@@ -1,6 +1,6 @@
--- Foreign Key Constraints
--- Version: 004
--- Description: Add all foreign key constraints after tables are created
+-- Foreign Key Constraints and Triggers
+-- Version: 003
+-- Description: Add all foreign key constraints and triggers after tables are created
 
 -- ==========================================
 -- PLANS TABLE CONSTRAINTS
@@ -33,3 +33,14 @@ ALTER TABLE plan_shares
     ADD CONSTRAINT fk_shares_shared_with 
     FOREIGN KEY (shared_with) 
     REFERENCES users(id) ON DELETE CASCADE;
+
+-- ==========================================
+-- TRIGGERS: Auto-update timestamps
+-- ==========================================
+
+-- Apply trigger to plans (function defined in 001_users.sql)
+DROP TRIGGER IF EXISTS trigger_plans_updated ON plans;
+CREATE TRIGGER trigger_plans_updated
+    BEFORE UPDATE ON plans
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
