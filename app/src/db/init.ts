@@ -3,7 +3,7 @@
  * WordPress-style auto-initialization on first run
  */
 
-import { Pool, PoolClient } from 'pg';
+import { Pool } from 'pg';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -125,36 +125,44 @@ export function getMigrationFiles(): MigrationFile[] {
 }
 
 /**
- * Execute a single migration file
+ * Execute a single migration file in its own transaction
  */
 async function executeMigration(
-  client: PoolClient,
+  pool: Pool,
   migration: MigrationFile
 ): Promise<void> {
   const content = fs.readFileSync(migration.path, 'utf-8');
+  const client = await pool.connect();
   
   console.log(`  Executing migration: ${migration.version}_${migration.name}`);
   
   try {
+    await client.query('BEGIN');
     await client.query(content);
+    
+    // Record migration
+    try {
+      await client.query(`
+        INSERT INTO migrations (version, name, checksum, success)
+        VALUES ($1, $2, $3, true)
+        ON CONFLICT (version) DO UPDATE SET
+          executed_at = CURRENT_TIMESTAMP,
+          checksum = $3,
+          success = true
+      `, [migration.version, migration.name, migration.checksum]);
+    } catch {
+      // migrations table might not exist yet on first migration
+    }
+    
+    await client.query('COMMIT');
+    console.log(`  ✓ Migration ${migration.version}_${migration.name} completed`);
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
     const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`  ❌ Migration failed: ${errorMsg}`);
+    console.error(`  ❌ Migration ${migration.version}_${migration.name} failed: ${errorMsg}`);
     throw error;
-  }
-  
-  // Record migration (only if migrations table exists)
-  try {
-    await client.query(`
-      INSERT INTO migrations (version, name, checksum, success)
-      VALUES ($1, $2, $3, true)
-      ON CONFLICT (version) DO UPDATE SET
-        executed_at = CURRENT_TIMESTAMP,
-        checksum = $3,
-        success = true
-    `, [migration.version, migration.name, migration.checksum]);
-  } catch {
-    // migrations table might not exist yet on first migration
+  } finally {
+    client.release();
   }
 }
 
@@ -167,12 +175,9 @@ export async function initializeDatabase(pool: Pool): Promise<{
   message: string;
   migrations: string[];
 }> {
-  const client = await pool.connect();
   const executedMigrations: string[] = [];
   
   try {
-    await client.query('BEGIN');
-    
     const migrations = getMigrationFiles();
     const executed = await getExecutedMigrations(pool);
     
@@ -182,18 +187,20 @@ export async function initializeDatabase(pool: Pool): Promise<{
     for (const migration of migrations) {
       if (!executed.includes(migration.version)) {
         try {
-          await executeMigration(client, migration);
+          await executeMigration(pool, migration);
           executedMigrations.push(`${migration.version}_${migration.name}`);
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : String(error);
-          throw new Error(`Failed at migration ${migration.version}_${migration.name}: ${errorMsg}`);
+          return { 
+            success: false, 
+            message: `Failed at migration ${migration.version}_${migration.name}: ${errorMsg}`,
+            migrations: executedMigrations 
+          };
         }
       } else {
         console.log(`  Skipping migration: ${migration.version}_${migration.name} (already executed)`);
       }
     }
-    
-    await client.query('COMMIT');
     
     const message = executedMigrations.length > 0
       ? `Database initialized successfully. Executed ${executedMigrations.length} migrations.`
@@ -203,14 +210,9 @@ export async function initializeDatabase(pool: Pool): Promise<{
     
     return { success: true, message, migrations: executedMigrations };
   } catch (error) {
-    await client.query('ROLLBACK').catch(() => {
-      // Rollback might fail if transaction is already aborted
-    });
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('Database initialization failed:', message);
     return { success: false, message, migrations: executedMigrations };
-  } finally {
-    client.release();
   }
 }
 
