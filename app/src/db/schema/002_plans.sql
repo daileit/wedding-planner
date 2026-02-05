@@ -88,24 +88,43 @@ CREATE INDEX IF NOT EXISTS idx_shares_token ON plan_shares(share_token);
 
 -- ==========================================
 -- FOREIGN KEY CONSTRAINTS
+-- (Added conditionally to avoid failures if users table doesn't exist yet)
 -- ==========================================
 
-ALTER TABLE plans
-    ADD CONSTRAINT fk_plans_user_id 
-    FOREIGN KEY (user_id) 
-    REFERENCES users(id) ON DELETE CASCADE;
+DO $$ BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users') THEN
+        ALTER TABLE plans
+            ADD CONSTRAINT fk_plans_user_id 
+            FOREIGN KEY (user_id) 
+            REFERENCES users(id) ON DELETE CASCADE;
+    END IF;
+EXCEPTION WHEN others THEN NULL;
+END $$;
 
-ALTER TABLE plan_templates
-    ADD CONSTRAINT fk_templates_created_by 
-    FOREIGN KEY (created_by) 
-    REFERENCES users(id) ON DELETE SET NULL;
+DO $$ BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users') THEN
+        ALTER TABLE plan_templates
+            ADD CONSTRAINT fk_templates_created_by 
+            FOREIGN KEY (created_by) 
+            REFERENCES users(id) ON DELETE SET NULL;
+    END IF;
+EXCEPTION WHEN others THEN NULL;
+END $$;
 
-ALTER TABLE plan_shares
-    ADD CONSTRAINT fk_shares_plan_id 
-    FOREIGN KEY (plan_id) 
-    REFERENCES plans(id) ON DELETE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE plan_shares
+        ADD CONSTRAINT fk_shares_plan_id 
+        FOREIGN KEY (plan_id) 
+        REFERENCES plans(id) ON DELETE CASCADE;
+EXCEPTION WHEN others THEN NULL;
+END $$;
 
-ALTER TABLE plan_shares
-    ADD CONSTRAINT fk_shares_shared_with 
-    FOREIGN KEY (shared_with) 
-    REFERENCES users(id) ON DELETE CASCADE;
+DO $$ BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users') THEN
+        ALTER TABLE plan_shares
+            ADD CONSTRAINT fk_shares_shared_with 
+            FOREIGN KEY (shared_with) 
+            REFERENCES users(id) ON DELETE CASCADE;
+    END IF;
+EXCEPTION WHEN others THEN NULL;
+END $$;
