@@ -18,7 +18,7 @@ END $$;
 
 CREATE TABLE IF NOT EXISTS plans (
     id          VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    user_id     VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id     VARCHAR(36) NOT NULL,
     
     -- Basic metadata (indexed for queries)
     title       VARCHAR(255) NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS plan_templates (
     plan_type   VARCHAR(50) NOT NULL,
     data        JSONB NOT NULL DEFAULT '{}',
     is_public   BOOLEAN DEFAULT TRUE,
-    created_by  VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL,
+    created_by  VARCHAR(36),
     created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -73,8 +73,8 @@ CREATE INDEX IF NOT EXISTS idx_templates_public ON plan_templates(is_public);
 
 CREATE TABLE IF NOT EXISTS plan_shares (
     id          VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    plan_id     VARCHAR(36) NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
-    shared_with VARCHAR(36) REFERENCES users(id) ON DELETE CASCADE,
+    plan_id     VARCHAR(36) NOT NULL,
+    shared_with VARCHAR(36),
     share_email VARCHAR(255),
     share_token VARCHAR(255) UNIQUE,
     can_edit    BOOLEAN DEFAULT FALSE,
