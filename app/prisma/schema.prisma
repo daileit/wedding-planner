@@ -19,12 +19,12 @@ model User {
   id            String    @id @default(cuid())
   name          String?
   email         String    @unique
-  emailVerified DateTime?
+  emailVerified DateTime? @map("email_verified")
   image         String?
-  password      String?   // For credentials-based auth (hashed)
-  isGuest       Boolean   @default(false) // Guest users (no account required)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  password      String?   @map("password_hash") // For credentials-based auth (hashed)
+  isGuest       Boolean   @default(false) @map("is_guest") // Guest users (no account required)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   // Relations
   accounts Account[]
@@ -37,10 +37,10 @@ model User {
 
 model Account {
   id                String  @id @default(cuid())
-  userId            String
+  userId            String  @map("user_id")
   type              String
   provider          String
-  providerAccountId String
+  providerAccountId String  @map("provider_account_id")
   refresh_token     String? @db.Text
   access_token      String? @db.Text
   expires_at        Int?
@@ -48,6 +48,7 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
+  createdAt         DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -58,9 +59,10 @@ model Account {
 
 model Session {
   id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
   expires      DateTime
+  createdAt    DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
