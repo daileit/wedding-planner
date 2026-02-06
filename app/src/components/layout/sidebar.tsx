@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { getLocale, getTranslations } from "@/lib/i18n";
 
 interface NavItem {
   title: string;
@@ -25,14 +26,18 @@ interface NavItem {
   badge?: number;
 }
 
-const navItems: NavItem[] = [
-  { title: "Dashboard", href: "/dashboard", icon: Home },
-  { title: "My Plans", href: "/dashboard/plans", icon: FolderKanban },
-  { title: "Budget", href: "/dashboard/budget", icon: DollarSign },
-  { title: "Timeline", href: "/dashboard/timeline", icon: CalendarDays },
-  { title: "Vendors", href: "/dashboard/vendors", icon: Users },
-  { title: "Settings", href: "/dashboard/settings", icon: Settings },
-];
+function useNavItems(locale: string) {
+  const t = getTranslations(locale as any);
+  const items: NavItem[] = [
+    { title: t.sidebar.dashboard, href: "/dashboard", icon: Home },
+    { title: t.sidebar.myPlans, href: "/dashboard/plans", icon: FolderKanban },
+    { title: t.sidebar.budget, href: "/dashboard/budget", icon: DollarSign },
+    { title: t.sidebar.timeline, href: "/dashboard/timeline", icon: CalendarDays },
+    { title: t.sidebar.vendors, href: "/dashboard/vendors", icon: Users },
+    { title: t.sidebar.settings, href: "/dashboard/settings", icon: Settings },
+  ];
+  return items;
+}
 
 interface SidebarProps {
   className?: string;
@@ -41,6 +46,8 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const locale = typeof window !== "undefined" ? (document.documentElement.lang || "en") : "en";
+  const navItems = useNavItems(locale);
 
   return (
     <aside

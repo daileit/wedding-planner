@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MobileSidebarTrigger } from "./sidebar";
 import { signOut } from "next-auth/react";
+import { getTranslations } from "@/lib/i18n";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 interface HeaderProps {
   user?: {
@@ -34,6 +36,8 @@ export function Header({ user }: HeaderProps) {
     .map((n) => n[0])
     .join("")
     .toUpperCase() ?? "U";
+  const locale = typeof window !== "undefined" ? (document.documentElement.lang || "en") : "en";
+  const t = getTranslations(locale as any);
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
@@ -44,7 +48,7 @@ export function Header({ user }: HeaderProps) {
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search plans, items, vendors..."
+            placeholder={t.header.searchPlaceholder}
             className="pl-10"
           />
         </div>
@@ -80,10 +84,10 @@ export function Header({ user }: HeaderProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <a href="/dashboard/settings">Profile Settings</a>
+              <a href="/dashboard/settings">{t.header.profileSettings}</a>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <a href="/dashboard/plans">My Plans</a>
+              <a href="/dashboard/plans">{t.header.myPlans}</a>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -94,6 +98,7 @@ export function Header({ user }: HeaderProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <LanguageSwitcher currentLocale={locale as any} />
       </div>
     </header>
   );

@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { getLocale } from "@/lib/i18n/server";
+import { getTranslations, interpolate } from "@/lib/i18n";
 import {
   Card,
   CardContent,
@@ -35,6 +37,8 @@ export default async function DashboardPage() {
   };
 
   const percentageSpent = Math.round((stats.spent / stats.totalBudget) * 100);
+  const locale = await getLocale();
+  const t = getTranslations(locale);
 
   return (
     <div className="space-y-6">
@@ -42,16 +46,18 @@ export default async function DashboardPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Welcome back, {session.user.name?.split(" ")[0]}! 💍
+            {interpolate(t.dashboard.welcomeBack, {
+              name: session.user.name?.split(" ")[0] ?? "".
+            })}
           </h1>
           <p className="text-muted-foreground">
-            Here&apos;s an overview of your wedding planning progress.
+            {t.dashboard.overview}
           </p>
         </div>
         <Button asChild>
           <Link href="/dashboard/plans/new">
             <Plus className="mr-2 h-4 w-4" />
-            New Plan
+            {t.dashboard.newPlan}
           </Link>
         </Button>
       </div>
@@ -61,7 +67,7 @@ export default async function DashboardPage() {
         {/* Budget Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.dashboard.totalBudget}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -81,13 +87,13 @@ export default async function DashboardPage() {
         {/* Completed Tasks */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.dashboard.completed}</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.completedTasks}</div>
             <p className="text-xs text-muted-foreground">
-              tasks completed so far
+              {t.dashboard.tasksCompleted}
             </p>
           </CardContent>
         </Card>
@@ -95,13 +101,13 @@ export default async function DashboardPage() {
         {/* Pending Tasks */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.dashboard.pending}</CardTitle>
             <Clock className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.pendingTasks}</div>
             <p className="text-xs text-muted-foreground">
-              tasks remaining
+              {t.dashboard.tasksRemaining}
             </p>
           </CardContent>
         </Card>
@@ -109,13 +115,13 @@ export default async function DashboardPage() {
         {/* Countdown */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Countdown</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.dashboard.countdown}</CardTitle>
             <CalendarDays className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.daysUntilWedding}</div>
             <p className="text-xs text-muted-foreground">
-              days until your wedding
+              {t.dashboard.daysUntil}
             </p>
           </CardContent>
         </Card>
@@ -125,15 +131,15 @@ export default async function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="col-span-full lg:col-span-2">
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle>{t.dashboard.recentActivity}</CardTitle>
             <CardDescription>
-              Your latest planning updates and changes.
+              {t.dashboard.recentActivityDescription}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed">
               <p className="text-sm text-muted-foreground">
-                No recent activity. Start by creating a new plan!
+                {t.dashboard.noActivity}
               </p>
             </div>
           </CardContent>
@@ -141,28 +147,28 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle>{t.dashboard.quickActions}</CardTitle>
             <CardDescription>
-              Common tasks to help you plan.
+              {t.dashboard.quickActionsDescription}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             <Button variant="outline" className="w-full justify-start" asChild>
               <Link href="/dashboard/plans/new">
                 <Plus className="mr-2 h-4 w-4" />
-                Create New Plan
+                {t.dashboard.createNewPlan}
               </Link>
             </Button>
             <Button variant="outline" className="w-full justify-start" asChild>
               <Link href="/dashboard/vendors">
                 <Plus className="mr-2 h-4 w-4" />
-                Browse Vendors
+                {t.dashboard.browseVendors}
               </Link>
             </Button>
             <Button variant="outline" className="w-full justify-start" asChild>
               <Link href="/dashboard/budget">
                 <DollarSign className="mr-2 h-4 w-4" />
-                Manage Budget
+                {t.dashboard.manageBudget}
               </Link>
             </Button>
           </CardContent>

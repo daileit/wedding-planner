@@ -15,6 +15,10 @@ import { Heart, AlertCircle, Info } from "lucide-react";
 import Link from "next/link";
 import { createGuestUser } from "@/server/actions/auth";
 import { cookies } from "next/headers";
+import { getTranslations } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18n/server";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import type { TranslationSchema } from "@/lib/i18n";
 
 // Check if error is a server error vs user error
 function isServerError(error: string): boolean {
@@ -22,20 +26,17 @@ function isServerError(error: string): boolean {
 }
 
 // Get notification type and message
-function getNotification(error: string): { type: "info" | "error"; message: string; showSignUp: boolean } {
-  // Server errors - show as actual errors
+function getNotification(error: string, t: TranslationSchema): { type: "info" | "error"; message: string; showSignUp: boolean } {
   if (isServerError(error)) {
     return {
       type: "error",
-      message: "Something went wrong. Please try again later.",
+      message: t.auth.errorServer,
       showSignUp: false,
     };
   }
-  
-  // User-related issues - show as helpful info
   return {
     type: "info",
-    message: "Invalid email or password. Please check your credentials and try again.",
+    message: t.auth.errorCredentials,
     showSignUp: true,
   };
 }
@@ -53,27 +54,33 @@ export default async function SignInPage({
   }
 
   const callbackUrl = params.callbackUrl || "/dashboard";
+  const locale = await getLocale();
+  const t = getTranslations(locale);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher currentLocale={locale} />
+      </div>
+
       <div className="mb-8 flex flex-col items-center">
         <Heart className="h-12 w-12 text-primary" />
-        <h1 className="mt-4 text-3xl font-bold">WedBeLoving</h1>
+        <h1 className="mt-4 text-3xl font-bold">{t.common.appName}</h1>
         <p className="mt-2 text-muted-foreground">
-          Your perfect wedding planning companion
+          {t.common.tagline}
         </p>
       </div>
 
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle>Welcome Back</CardTitle>
+          <CardTitle>{t.auth.welcomeBack}</CardTitle>
           <CardDescription>
-            Sign in to continue planning your perfect wedding
+            {t.auth.signInDescription}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {params.error && (() => {
-            const notification = getNotification(params.error);
+            const notification = getNotification(params.error, t);
             return (
               <div className={`rounded-md p-3 text-sm flex items-start gap-2 ${
                 notification.type === "error" 
@@ -89,9 +96,9 @@ export default async function SignInPage({
                   <span>{notification.message}</span>
                   {notification.showSignUp && (
                     <span className="block mt-1">
-                      Don&apos;t have an account?{" "}
+                      {t.auth.noAccount}{" "}
                       <Link href="/auth/register" className="font-medium text-primary hover:underline">
-                        Sign up here
+                        {t.auth.signUpHere}
                       </Link>
                     </span>
                   )}
@@ -126,27 +133,27 @@ export default async function SignInPage({
             className="space-y-4"
           >
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t.auth.email}</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t.auth.emailPlaceholder}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t.auth.password}</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder={t.auth.passwordPlaceholder}
                 required
               />
             </div>
             <Button type="submit" className="w-full" size="lg">
-              Sign In
+              {t.auth.signIn}
             </Button>
           </form>
 
@@ -158,7 +165,7 @@ export default async function SignInPage({
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-background px-2 text-muted-foreground">
-                    Or continue with
+                    {t.auth.orContinueWith}
                   </span>
                 </div>
               </div>
@@ -193,7 +200,7 @@ export default async function SignInPage({
                       fill="#EA4335"
                     />
                   </svg>
-                  Continue with Google
+                  {t.auth.continueWithGoogle}
                 </Button>
               </form>
             </>
@@ -218,32 +225,32 @@ export default async function SignInPage({
             }}
           >
             <Button type="submit" variant="ghost" className="w-full" size="lg">
-              Continue as Guest
+              {t.auth.continueAsGuest}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            {t.auth.noAccount}{" "}
             <Link href="/auth/register" className="font-medium text-primary hover:underline">
-              Sign up
+              {t.auth.signUpLink}
             </Link>
           </p>
 
           <p className="text-center text-xs text-muted-foreground">
-            By continuing, you agree to our{" "}
+            {t.auth.termsAgreement}{" "}
             <a href="/terms" className="underline hover:text-primary">
-              Terms of Service
+              {t.auth.termsOfService}
             </a>{" "}
-            and{" "}
+            {t.common.and}{" "}
             <a href="/privacy" className="underline hover:text-primary">
-              Privacy Policy
+              {t.auth.privacyPolicy}
             </a>
           </p>
         </CardContent>
       </Card>
 
       <p className="mt-8 text-center text-sm text-muted-foreground">
-        Plan your dream wedding with ease ✨
+        {t.footerTagline}
       </p>
     </div>
   );

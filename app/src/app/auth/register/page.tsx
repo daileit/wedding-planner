@@ -13,6 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Heart } from "lucide-react";
 import Link from "next/link";
 import { registerUser } from "@/server/actions/auth";
+import { getTranslations } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18n/server";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default async function RegisterPage({
   searchParams,
@@ -27,6 +30,8 @@ export default async function RegisterPage({
   }
 
   const callbackUrl = params.callbackUrl || "/dashboard";
+  const locale = await getLocale();
+  const t = getTranslations(locale);
 
   async function handleRegister(formData: FormData) {
     "use server";
@@ -56,28 +61,32 @@ export default async function RegisterPage({
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher currentLocale={locale} />
+      </div>
+
       <div className="mb-8 flex flex-col items-center">
         <Heart className="h-12 w-12 text-primary" />
-        <h1 className="mt-4 text-3xl font-bold">WedBeLoving</h1>
+        <h1 className="mt-4 text-3xl font-bold">{t.common.appName}</h1>
         <p className="mt-2 text-muted-foreground">
-          Your perfect wedding planning companion
+          {t.common.tagline}
         </p>
       </div>
 
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle>Create Account</CardTitle>
+          <CardTitle>{t.auth.createAccount}</CardTitle>
           <CardDescription>
-            Sign up to start planning your perfect wedding
+            {t.auth.signUpDescription}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {params.error && (
             <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
               {params.error === "PasswordMismatch"
-                ? "Passwords do not match"
+                ? t.auth.errorPasswordMismatch
                 : params.error === "An account with this email already exists"
-                  ? "An account with this email already exists"
+                  ? t.auth.errorEmailExists
                   : params.error}
             </div>
           )}
@@ -85,53 +94,53 @@ export default async function RegisterPage({
           {/* Registration Form */}
           <form action={handleRegister} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">{t.auth.fullName}</Label>
               <Input
                 id="name"
                 name="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder={t.auth.namePlaceholder}
                 required
                 minLength={2}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t.auth.email}</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t.auth.emailPlaceholder}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t.auth.password}</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder={t.auth.passwordPlaceholder}
                 required
                 minLength={8}
               />
               <p className="text-xs text-muted-foreground">
-                Must be at least 8 characters
+                {t.auth.passwordMinLength}
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">{t.auth.confirmPassword}</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
-                placeholder="••••••••"
+                placeholder={t.auth.passwordPlaceholder}
                 required
                 minLength={8}
               />
             </div>
             <Button type="submit" className="w-full" size="lg">
-              Create Account
+              {t.auth.createAccount}
             </Button>
           </form>
 
@@ -143,7 +152,7 @@ export default async function RegisterPage({
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-background px-2 text-muted-foreground">
-                    Or continue with
+                    {t.auth.orContinueWith}
                   </span>
                 </div>
               </div>
@@ -178,34 +187,34 @@ export default async function RegisterPage({
                       fill="#EA4335"
                     />
                   </svg>
-                  Sign up with Google
+                  {t.auth.signUpWithGoogle}
                 </Button>
               </form>
             </>
           )}
 
           <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            {t.auth.hasAccount}{" "}
             <Link href="/auth/signin" className="font-medium text-primary hover:underline">
-              Sign in
+              {t.auth.signInLink}
             </Link>
           </p>
 
           <p className="text-center text-xs text-muted-foreground">
-            By continuing, you agree to our{" "}
+            {t.auth.termsAgreement}{" "}
             <a href="/terms" className="underline hover:text-primary">
-              Terms of Service
+              {t.auth.termsOfService}
             </a>{" "}
-            and{" "}
+            {t.common.and}{" "}
             <a href="/privacy" className="underline hover:text-primary">
-              Privacy Policy
+              {t.auth.privacyPolicy}
             </a>
           </p>
         </CardContent>
       </Card>
 
       <p className="mt-8 text-center text-sm text-muted-foreground">
-        Plan your dream wedding with ease ✨
+        {t.footerTagline}
       </p>
     </div>
   );
