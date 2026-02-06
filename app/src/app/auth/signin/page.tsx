@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/lib/auth";
+import { AuthError } from "next-auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -103,11 +104,25 @@ export default async function SignInPage({
           <form
             action={async (formData: FormData) => {
               "use server";
-              await signIn("credentials", {
-                email: formData.get("email"),
-                password: formData.get("password"),
-                redirectTo: callbackUrl,
-              });
+              try {
+                await signIn("credentials", {
+                  email: formData.get("email"),
+                  password: formData.get("password"),
+                  redirectTo: callbackUrl,
+                });
+              } catch (error) {
+                // Re-throw redirect errors (Next.js uses these internally)
+                if (error && typeof error === "object" && "digest" in error) {
+                  throw error;
+                }
+                // Handle NextAuth errors gracefully
+                if (error instanceof AuthError) {
+                  redirect(`/auth/signin?error=${error.type}&callbackUrl=${encodeURIComponent(callbackUrl)}`);
+                }
+                // For any other errors, show generic error
+                redirect(`/auth/signin?error=Default&callbackUrl=${encodeURIComponent(callbackUrl)}`);
+              }
+            }}
             }}
             className="space-y-4"
           >
