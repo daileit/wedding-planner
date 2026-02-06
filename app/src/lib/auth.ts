@@ -6,13 +6,14 @@ import { prisma } from "@/lib/prisma";
 import { compare } from "bcryptjs";
 import type { Provider } from "next-auth/providers";
 
-// Custom auth errors
-class AuthError extends Error {
-  constructor(message: string, public code: string) {
-    super(message);
-    this.name = "AuthError";
-  }
-}
+// Auth result types for better error handling
+export type AuthErrorCode = 
+  | "missing_credentials"
+  | "invalid_email"
+  | "user_not_found"
+  | "guest_account"
+  | "oauth_account"
+  | "invalid_password";
 
 // Build providers array dynamically
 const providers: Provider[] = [
@@ -23,69 +24,59 @@ const providers: Provider[] = [
       password: { label: "Password", type: "password" },
     },
     async authorize(credentials) {
-      // Validate input
-      if (!credentials?.email) {
-        throw new AuthError("Email is required", "missing_email");
+      try {
+        // Basic validation - return null for missing credentials
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        const email = (credentials.email as string).toLowerCase().trim();
+        const password = credentials.password as string;
+
+        // Basic email format check
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          return null;
+        }
+
+        // Find user
+        const user = await prisma.user.findUnique({
+          where: { email },
+        });
+
+        // User not found - return null (don't reveal if email exists)
+        if (!user) {
+          return null;
+        }
+
+        // Guest user - can't login with password
+        if (user.isGuest) {
+          return null;
+        }
+
+        // OAuth-only account - no password set
+        if (!user.password) {
+          return null;
+        }
+
+        // Verify password
+        const isPasswordValid = await compare(password, user.password);
+        if (!isPasswordValid) {
+          return null;
+        }
+
+        // Success - return user
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        };
+      } catch (error) {
+        // Only log real server errors, don't expose to user
+        console.error("[Auth] Server error during authentication:", error);
+        throw new Error("Authentication service unavailable. Please try again later.");
       }
-      
-      if (!credentials?.password) {
-        throw new AuthError("Password is required", "missing_password");
-      }
-
-      const email = (credentials.email as string).toLowerCase().trim();
-      const password = credentials.password as string;
-
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        throw new AuthError("Please enter a valid email address", "invalid_email");
-      }
-
-      // Find user
-      const user = await prisma.user.findUnique({
-        where: { email },
-      });
-
-      // User not found
-      if (!user) {
-        throw new AuthError(
-          "No account found with this email. Please sign up first.",
-          "user_not_found"
-        );
-      }
-
-      // Guest user trying to login with password
-      if (user.isGuest) {
-        throw new AuthError(
-          "This is a guest account. Please upgrade your account to sign in with a password.",
-          "guest_account"
-        );
-      }
-
-      // User has no password (OAuth only account)
-      if (!user.password) {
-        throw new AuthError(
-          "This account uses social login. Please sign in with Google or another provider.",
-          "no_password"
-        );
-      }
-
-      // Verify password
-      const isPasswordValid = await compare(password, user.password);
-
-      if (!isPasswordValid) {
-        throw new AuthError(
-          "Incorrect password. Please try again.",
-          "invalid_password"
-        );
-      }
-
-      return {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        image: user.image,
-      };
     },
   }),
 ];

@@ -10,26 +10,33 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Heart } from "lucide-react";
+import { Heart, AlertCircle, Info } from "lucide-react";
 import Link from "next/link";
 import { createGuestUser } from "@/server/actions/auth";
 import { cookies } from "next/headers";
 
-// Map error codes to user-friendly messages
-function getErrorMessage(error: string): string {
-  const errorMessages: Record<string, string> = {
-    missing_email: "Please enter your email address.",
-    missing_password: "Please enter your password.",
-    invalid_email: "Please enter a valid email address.",
-    user_not_found: "No account found with this email.",
-    guest_account: "This is a guest account. Please upgrade to sign in with a password.",
-    no_password: "This account uses social login. Please sign in with Google.",
-    invalid_password: "Incorrect password. Please try again.",
-    CredentialsSignin: "Invalid email or password. Please try again.",
-    Default: "An error occurred. Please try again.",
+// Check if error is a server error vs user error
+function isServerError(error: string): boolean {
+  return error.includes("unavailable") || error.includes("server") || error === "Default";
+}
+
+// Get notification type and message
+function getNotification(error: string): { type: "info" | "error"; message: string; showSignUp: boolean } {
+  // Server errors - show as actual errors
+  if (isServerError(error)) {
+    return {
+      type: "error",
+      message: "Something went wrong. Please try again later.",
+      showSignUp: false,
+    };
+  }
+  
+  // User-related issues - show as helpful info
+  return {
+    type: "info",
+    message: "Invalid email or password. Please check your credentials and try again.",
+    showSignUp: true,
   };
-  const message = errorMessages[error];
-  return (message || errorMessages.Default) as string;
 }
 
 export default async function SignInPage({
@@ -64,16 +71,33 @@ export default async function SignInPage({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {params.error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {getErrorMessage(params.error)}
-              {params.error === "user_not_found" && (
-                <Link href="/auth/register" className="ml-1 font-medium underline">
-                  Sign up now
-                </Link>
-              )}
-            </div>
-          )}
+          {params.error && (() => {
+            const notification = getNotification(params.error);
+            return (
+              <div className={`rounded-md p-3 text-sm flex items-start gap-2 ${
+                notification.type === "error" 
+                  ? "bg-destructive/10 text-destructive" 
+                  : "bg-muted text-muted-foreground"
+              }`}>
+                {notification.type === "error" ? (
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                ) : (
+                  <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                )}
+                <div>
+                  <span>{notification.message}</span>
+                  {notification.showSignUp && (
+                    <span className="block mt-1">
+                      Don&apos;t have an account?{" "}
+                      <Link href="/auth/register" className="font-medium text-primary hover:underline">
+                        Sign up here
+                      </Link>
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Email/Password Form */}
           <form
