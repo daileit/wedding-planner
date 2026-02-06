@@ -123,7 +123,6 @@ export default async function SignInPage({
                 redirect(`/auth/signin?error=Default&callbackUrl=${encodeURIComponent(callbackUrl)}`);
               }
             }}
-            }}
             className="space-y-4"
           >
             <div className="space-y-2">
