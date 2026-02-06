@@ -1,4 +1,6 @@
-const en = {
+import type { TranslationSchema } from "../types";
+
+const en: TranslationSchema = {
   // ==========================================
   // Common
   // ==========================================
@@ -155,7 +157,8 @@ const en = {
   // Footer tagline
   // ==========================================
   footerTagline: "Plan your dream wedding with ease ✨",
-} as const;
+};
 
 export default en;
+export type { TranslationSchema } from "../types";
 export type TranslationSchema = typeof en;

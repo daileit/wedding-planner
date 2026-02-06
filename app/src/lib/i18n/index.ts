@@ -1,7 +1,7 @@
 import { type Locale, defaultLocale } from "./config";
 import en from "./locales/en";
 import vi from "./locales/vi";
-import type { TranslationSchema } from "./locales/en";
+import type { TranslationSchema } from "./types";
 
 // All translations map
 const translations: Record<Locale, TranslationSchema> = {
@@ -29,4 +29,4 @@ export function interpolate(template: string, values: Record<string, string | nu
 
 // Re-export everything
 export { type Locale, locales, defaultLocale, localeNames, localeFlags, LOCALE_COOKIE } from "./config";
-export type { TranslationSchema } from "./locales/en";
+export type { TranslationSchema } from "./types";

@@ -1,4 +1,4 @@
-import type { TranslationSchema } from "./en";
+import type { TranslationSchema } from "../types";
 
 const vi: TranslationSchema = {
   // ==========================================
