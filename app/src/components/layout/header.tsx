@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useTransition } from "react";
 import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ export function Header({ user }: HeaderProps) {
     .join("")
     .toUpperCase() ?? "U";
   const locale = typeof window !== "undefined" ? (document.documentElement.lang || "en") : "en";
-  const t = getTranslations(locale as Parameters<typeof getTranslations>[0]);
+  const t = getTranslations(locale as React.ComponentProps<typeof getTranslations>[0]);
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
@@ -98,7 +98,7 @@ export function Header({ user }: HeaderProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <LanguageSwitcher currentLocale={locale as Parameters<typeof LanguageSwitcher>["currentLocale"]} />
+        <LanguageSwitcher currentLocale={locale as React.ComponentProps<typeof LanguageSwitcher>["currentLocale"]} />
       </div>
     </header>
   );
