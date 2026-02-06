@@ -129,7 +129,7 @@ export type TranslationSchema = {
   };
   currency: {
     code: string;
-    name: string;
+    display: string;
   };
   footerTagline: string;
 };

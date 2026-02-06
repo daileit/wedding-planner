@@ -158,7 +158,7 @@ const en: TranslationSchema = {
   // ==========================================
   currency: {
     code: "USD",
-    name: "US Dollar",
+    display: "US Dollar (USD)",
   },
 
   // ==========================================

@@ -71,12 +71,16 @@ export default async function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              ${stats.totalBudget.toLocaleString()}
+            <div className="text-2xl font-bold flex items-center">
+              <DollarSign className="h-5 w-5 mr-1" />
+              {stats.totalBudget.toLocaleString()} {t.currency.display}
             </div>
             <div className="mt-3">
               <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                <span>Spent: ${stats.spent.toLocaleString()}</span>
+                <span>
+                  Spent: <DollarSign className="h-4 w-4 inline-block" />
+                  {stats.spent.toLocaleString()} {t.currency.code}
+                </span>
                 <span>{percentageSpent}%</span>
               </div>
               <Progress value={percentageSpent} className="h-2" />

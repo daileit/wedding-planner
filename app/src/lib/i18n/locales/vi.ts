@@ -158,7 +158,7 @@ const vi: TranslationSchema = {
   // ==========================================
   currency: {
     code: "VND",
-    name: "Triệu đồng",
+    display: "Triệu đồng (VND)",
   },
 
   // ==========================================
