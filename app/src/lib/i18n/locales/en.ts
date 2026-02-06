@@ -160,5 +160,3 @@ const en: TranslationSchema = {
 };
 
 export default en;
-export type { TranslationSchema } from "../types";
-export type TranslationSchema = typeof en;
