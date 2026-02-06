@@ -154,6 +154,14 @@ const en: TranslationSchema = {
   },
 
   // ==========================================
+  // Currency
+  // ==========================================
+  currency: {
+    code: "USD",
+    name: "US Dollar",
+  },
+
+  // ==========================================
   // Footer tagline
   // ==========================================
   footerTagline: "Plan your dream wedding with ease ✨",

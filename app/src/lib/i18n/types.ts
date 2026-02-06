@@ -127,5 +127,9 @@ export type TranslationSchema = {
     profileSettings: string;
     myPlans: string;
   };
+  currency: {
+    code: string;
+    name: string;
+  };
   footerTagline: string;
 };

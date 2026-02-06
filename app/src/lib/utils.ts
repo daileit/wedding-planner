@@ -54,3 +54,43 @@ export function generateSlug(text: string): string {
     .replace(/--+/g, "-")
     .trim();
 }
+
+/**
+ * Format a number to a user-friendly format with K (thousands) or M (millions)
+ * Example: 1500 -> "1.5K", 1500000 -> "1.5M"
+ */
+export function formatNumberShort(num: number): string {
+  if (num >= 1_000_000) {
+    return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  }
+  if (num >= 1_000) {
+    return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+  }
+  return num.toString();
+}
+
+/**
+ * Format currency with user-friendly number display
+ * Example: formatCurrencyFriendly(1500, "USD") -> "$1.5K"
+ */
+export function formatCurrencyFriendly(
+  amount: number,
+  currencyCode: string = "USD"
+): string {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currencyCode,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+
+  // Format the number with K/M suffix
+  const shortNumber = formatNumberShort(amount);
+  
+  // Get currency symbol
+  const currencySymbol = formatter
+    .formatToParts(1)
+    .find((part) => part.type === "currency")?.value || currencyCode;
+
+  return `${currencySymbol}${shortNumber}`;
+}
