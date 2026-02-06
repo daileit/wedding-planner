@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MobileSidebarTrigger } from "./sidebar";
 import { signOut } from "next-auth/react";
-import { getTranslations } from "@/lib/i18n";
+import { getTranslations, type Locale } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
 interface HeaderProps {
@@ -37,7 +37,7 @@ export function Header({ user }: HeaderProps) {
     .join("")
     .toUpperCase() ?? "U";
   const locale = typeof window !== "undefined" ? (document.documentElement.lang || "en") : "en";
-  const t = getTranslations(locale as React.ComponentProps<typeof getTranslations>[0]);
+  const t = getTranslations(locale as Locale);
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
