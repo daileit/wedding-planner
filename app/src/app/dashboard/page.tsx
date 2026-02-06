@@ -47,7 +47,7 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             {interpolate(t.dashboard.welcomeBack, {
-              name: session.user.name?.split(" ")[0] ?? "".
+              name: session.user.name?.split(" ")[0] ?? "",
             })}
           </h1>
           <p className="text-muted-foreground">

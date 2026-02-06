@@ -37,7 +37,7 @@ export function Header({ user }: HeaderProps) {
     .join("")
     .toUpperCase() ?? "U";
   const locale = typeof window !== "undefined" ? (document.documentElement.lang || "en") : "en";
-  const t = getTranslations(locale as any);
+  const t = getTranslations(locale as Parameters<typeof getTranslations>[0]);
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
@@ -98,7 +98,7 @@ export function Header({ user }: HeaderProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <LanguageSwitcher currentLocale={locale as any} />
+        <LanguageSwitcher currentLocale={locale as Parameters<typeof LanguageSwitcher>["currentLocale"]} />
       </div>
     </header>
   );

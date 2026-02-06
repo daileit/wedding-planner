@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { getLocale, getTranslations } from "@/lib/i18n";
+import { getTranslations } from "@/lib/i18n";
 
 interface NavItem {
   title: string;
@@ -27,7 +27,7 @@ interface NavItem {
 }
 
 function useNavItems(locale: string) {
-  const t = getTranslations(locale as any);
+  const t = getTranslations(locale as Parameters<typeof getTranslations>[0]);
   const items: NavItem[] = [
     { title: t.sidebar.dashboard, href: "/dashboard", icon: Home },
     { title: t.sidebar.myPlans, href: "/dashboard/plans", icon: FolderKanban },
