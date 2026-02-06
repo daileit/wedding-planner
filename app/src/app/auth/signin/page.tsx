@@ -28,7 +28,8 @@ function getErrorMessage(error: string): string {
     CredentialsSignin: "Invalid email or password. Please try again.",
     Default: "An error occurred. Please try again.",
   };
-  return errorMessages[error] || errorMessages.Default;
+  const message = errorMessages[error];
+  return (message || errorMessages.Default) as string;
 }
 
 export default async function SignInPage({
