@@ -15,6 +15,22 @@ import Link from "next/link";
 import { createGuestUser } from "@/server/actions/auth";
 import { cookies } from "next/headers";
 
+// Map error codes to user-friendly messages
+function getErrorMessage(error: string): string {
+  const errorMessages: Record<string, string> = {
+    missing_email: "Please enter your email address.",
+    missing_password: "Please enter your password.",
+    invalid_email: "Please enter a valid email address.",
+    user_not_found: "No account found with this email.",
+    guest_account: "This is a guest account. Please upgrade to sign in with a password.",
+    no_password: "This account uses social login. Please sign in with Google.",
+    invalid_password: "Incorrect password. Please try again.",
+    CredentialsSignin: "Invalid email or password. Please try again.",
+    Default: "An error occurred. Please try again.",
+  };
+  return errorMessages[error] || errorMessages.Default;
+}
+
 export default async function SignInPage({
   searchParams,
 }: {
@@ -49,9 +65,12 @@ export default async function SignInPage({
         <CardContent className="space-y-6">
           {params.error && (
             <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {params.error === "CredentialsSignin"
-                ? "Invalid email or password"
-                : "An error occurred. Please try again."}
+              {getErrorMessage(params.error)}
+              {params.error === "user_not_found" && (
+                <Link href="/auth/register" className="ml-1 font-medium underline">
+                  Sign up now
+                </Link>
+              )}
             </div>
           )}
 

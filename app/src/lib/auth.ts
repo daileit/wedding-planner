@@ -6,6 +6,14 @@ import { prisma } from "@/lib/prisma";
 import { compare } from "bcryptjs";
 import type { Provider } from "next-auth/providers";
 
+// Custom auth errors
+class AuthError extends Error {
+  constructor(message: string, public code: string) {
+    super(message);
+    this.name = "AuthError";
+  }
+}
+
 // Build providers array dynamically
 const providers: Provider[] = [
   Credentials({
@@ -15,25 +23,61 @@ const providers: Provider[] = [
       password: { label: "Password", type: "password" },
     },
     async authorize(credentials) {
-      if (!credentials?.email || !credentials?.password) {
-        return null;
+      // Validate input
+      if (!credentials?.email) {
+        throw new AuthError("Email is required", "missing_email");
+      }
+      
+      if (!credentials?.password) {
+        throw new AuthError("Password is required", "missing_password");
       }
 
-      const email = credentials.email as string;
+      const email = (credentials.email as string).toLowerCase().trim();
       const password = credentials.password as string;
 
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new AuthError("Please enter a valid email address", "invalid_email");
+      }
+
+      // Find user
       const user = await prisma.user.findUnique({
         where: { email },
       });
 
-      if (!user || !user.password) {
-        return null;
+      // User not found
+      if (!user) {
+        throw new AuthError(
+          "No account found with this email. Please sign up first.",
+          "user_not_found"
+        );
       }
 
+      // Guest user trying to login with password
+      if (user.isGuest) {
+        throw new AuthError(
+          "This is a guest account. Please upgrade your account to sign in with a password.",
+          "guest_account"
+        );
+      }
+
+      // User has no password (OAuth only account)
+      if (!user.password) {
+        throw new AuthError(
+          "This account uses social login. Please sign in with Google or another provider.",
+          "no_password"
+        );
+      }
+
+      // Verify password
       const isPasswordValid = await compare(password, user.password);
 
       if (!isPasswordValid) {
-        return null;
+        throw new AuthError(
+          "Incorrect password. Please try again.",
+          "invalid_password"
+        );
       }
 
       return {
