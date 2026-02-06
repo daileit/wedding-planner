@@ -28,4 +28,5 @@ export function interpolate(template: string, values: Record<string, string | nu
 }
 
 // Re-export everything
-export { type Locale, type TranslationSchema, locales, defaultLocale, localeNames, localeFlags, LOCALE_COOKIE } from "./config";
+export { type Locale, locales, defaultLocale, localeNames, localeFlags, LOCALE_COOKIE } from "./config";
+export type { TranslationSchema } from "./locales/en";
